@@ -56,6 +56,13 @@ void listDevices() {
             if (!dev.busNum.empty() && !dev.devNum.empty()) {
                 std::cout << "  USB Location: Bus " << dev.busNum << " Dev " << dev.devNum << "\n";
             }
+            if (!dev.kernelPath.empty()) {
+                std::cout << "  USB Port:     " << dev.kernelPath;
+                if (dev.serial.empty()) {
+                    std::cout << " (used for identification)";
+                }
+                std::cout << "\n";
+            }
             std::cout << "\n";
         }
     } catch (const std::exception& e) {

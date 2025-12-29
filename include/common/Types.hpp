@@ -26,6 +26,7 @@ struct DeviceInfo {
     std::string busNum;         // USB bus number
     std::string devNum;         // USB device number on bus
     std::string interfaceNum;   // USB interface number
+    std::string kernelPath;     // USB port path (e.g., 1-2.3) for physical location
     
     bool isValid() const {
         return !devPath.empty() && !vendorId.empty();
@@ -59,6 +60,7 @@ struct UdevRule {
     std::string symlink;        // Resulting symlink in /dev/
     std::string filePath;       // Path to the rule file
     std::string interfaceNum;   // USB interface number (for multi-interface devices)
+    std::string kernelPath;     // USB port path for devices without serial
     int priority;               // Rule priority (e.g., 99)
     bool isActive;              // Whether rule is currently active
     
@@ -74,13 +76,17 @@ struct UdevRule {
         if (!serial.empty()) {
             return serial == device.serial;
         }
-        // Rule has no serial - matches devices without serial
+        // If rule has kernelPath (USB port), device must match it
+        if (!kernelPath.empty()) {
+            return kernelPath == device.kernelPath;
+        }
+        // Rule has no serial and no kernelPath - matches any device with same vendor:product without serial
         return device.serial.empty();
     }
     
-    // Check if this rule uniquely identifies the device (has serial)
+    // Check if this rule uniquely identifies the device (has serial or kernelPath)
     bool isUniqueMatch() const {
-        return !serial.empty();
+        return !serial.empty() || !kernelPath.empty();
     }
 };
 

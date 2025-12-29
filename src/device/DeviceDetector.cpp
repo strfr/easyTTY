@@ -144,6 +144,12 @@ DeviceInfo DeviceDetector::extractDeviceInfo(struct udev_device* dev) {
         info.busNum = getSysAttr(usb_dev, "busnum");
         info.devNum = getSysAttr(usb_dev, "devnum");
         
+        // Get kernel path (USB port path like "1-2.3") for physical location
+        const char* sysName = udev_device_get_sysname(usb_dev);
+        if (sysName) {
+            info.kernelPath = sysName;
+        }
+        
         const char* driver = udev_device_get_driver(usb_dev);
         if (driver) {
             info.driver = driver;

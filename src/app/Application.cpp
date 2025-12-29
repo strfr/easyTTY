@@ -288,13 +288,16 @@ void Application::showDeviceDetails(const DeviceInfo& device) {
         if (!device.serial.empty()) {
             items.push_back(tui::MenuItem("Serial:       " + device.serial, "", MenuItemType::Action, nullptr, false));
         } else {
-            items.push_back(tui::MenuItem("Serial:       (none - device has no serial)", "", MenuItemType::Action, nullptr, false));
+            items.push_back(tui::MenuItem("Serial:       (none - using USB port instead)", "", MenuItemType::Action, nullptr, false));
         }
         if (!device.driver.empty()) {
             items.push_back(tui::MenuItem("Driver:       " + device.driver, "", MenuItemType::Action, nullptr, false));
         }
         if (!device.busNum.empty() && !device.devNum.empty()) {
             items.push_back(tui::MenuItem("USB Location: Bus " + device.busNum + " Dev " + device.devNum, "", MenuItemType::Action, nullptr, false));
+        }
+        if (!device.kernelPath.empty()) {
+            items.push_back(tui::MenuItem("USB Port:     " + device.kernelPath + (device.serial.empty() ? " (used for identification)" : ""), "", MenuItemType::Action, nullptr, false));
         }
         
         items.push_back(tui::MenuItem::Separator());
@@ -321,8 +324,8 @@ void Application::showDeviceDetails(const DeviceInfo& device) {
         } else {
             if (device.serial.empty()) {
                 items.push_back(tui::MenuItem(
-                    "WARNING: Device has no serial number",
-                    "Rule will apply to ALL identical devices",
+                    "NOTE: Device has no serial, using USB port " + device.kernelPath,
+                    "Keep device in same USB port for persistent naming",
                     MenuItemType::Action,
                     nullptr,
                     false
@@ -537,6 +540,9 @@ std::string Application::formatDeviceForList(const DeviceInfo& device) const {
             shortSerial = shortSerial.substr(0, 8) + "..";
         }
         ss << " S:" << shortSerial;
+    } else if (!device.kernelPath.empty()) {
+        // Show USB port for devices without serial (like CH340/CH341)
+        ss << " Port:" << device.kernelPath;
     }
     
     ss << "]";

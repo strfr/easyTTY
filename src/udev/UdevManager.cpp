@@ -16,15 +16,30 @@ std::string UdevRule::generateRule() const {
     std::stringstream ss;
     ss << "# EasyTTY auto-generated rule for " << name << "\n";
     ss << "# Created by easyTTY - USB device persistent naming\n";
-    ss << "SUBSYSTEM==\"tty\", ";
-    ss << "ATTRS{idVendor}==\"" << vendorId << "\", ";
-    ss << "ATTRS{idProduct}==\"" << productId << "\"";
     
     if (!serial.empty()) {
-        ss << ", ATTRS{serial}==\"" << serial << "\"";
+        // Use serial number to identify device (works regardless of USB port)
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "ATTRS{idVendor}==\"" << vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << productId << "\", ";
+        ss << "ATTRS{serial}==\"" << serial << "\", ";
+        ss << "SYMLINK+=\"" << symlink << "\", MODE=\"0666\"";
+    } else if (!kernelPath.empty()) {
+        // Use USB port path to identify device (must stay in same port)
+        ss << "# NOTE: This device has no serial. Rule is based on USB port " << kernelPath << "\n";
+        ss << "# Device must remain plugged into the same USB port!\n";
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "KERNELS==\"" << kernelPath << "\", ";
+        ss << "ATTRS{idVendor}==\"" << vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << productId << "\", ";
+        ss << "SYMLINK+=\"" << symlink << "\", MODE=\"0666\"";
+    } else {
+        // Fallback - no unique identifier
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "ATTRS{idVendor}==\"" << vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << productId << "\", ";
+        ss << "SYMLINK+=\"" << symlink << "\", MODE=\"0666\"";
     }
-    
-    ss << ", SYMLINK+=\"" << symlink << "\", MODE=\"0666\"";
     
     return ss.str();
 }
@@ -182,20 +197,36 @@ std::string UdevManager::generateRuleContent(const DeviceInfo& device, const std
     ss << "# Product: " << device.product << " (" << device.productId << ")\n";
     if (!device.serial.empty()) {
         ss << "# Serial: " << device.serial << "\n";
+    } else {
+        ss << "# USB Port: " << device.kernelPath << " (device has no serial)\n";
     }
     ss << "# Original: " << device.devPath << "\n";
     ss << "# Created: " << utils::executeCommand("date") << "\n";
     ss << "\n";
     
-    ss << "SUBSYSTEM==\"tty\", ";
-    ss << "ATTRS{idVendor}==\"" << device.vendorId << "\", ";
-    ss << "ATTRS{idProduct}==\"" << device.productId << "\"";
-    
     if (!device.serial.empty()) {
-        ss << ", ATTRS{serial}==\"" << device.serial << "\"";
+        // Use serial number - works regardless of USB port
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "ATTRS{idVendor}==\"" << device.vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << device.productId << "\", ";
+        ss << "ATTRS{serial}==\"" << device.serial << "\", ";
+        ss << "SYMLINK+=\"" << symlinkName << "\", MODE=\"0666\"\n";
+    } else if (!device.kernelPath.empty()) {
+        // Use USB port path - device must stay in same port
+        ss << "# NOTE: This rule uses USB port path because device has no serial\n";
+        ss << "# Keep this device plugged into the same USB port!\n";
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "KERNELS==\"" << device.kernelPath << "\", ";
+        ss << "ATTRS{idVendor}==\"" << device.vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << device.productId << "\", ";
+        ss << "SYMLINK+=\"" << symlinkName << "\", MODE=\"0666\"\n";
+    } else {
+        // Fallback - no unique identifier
+        ss << "SUBSYSTEM==\"tty\", ";
+        ss << "ATTRS{idVendor}==\"" << device.vendorId << "\", ";
+        ss << "ATTRS{idProduct}==\"" << device.productId << "\", ";
+        ss << "SYMLINK+=\"" << symlinkName << "\", MODE=\"0666\"\n";
     }
-    
-    ss << ", SYMLINK+=\"" << symlinkName << "\", MODE=\"0666\"\n";
     
     return ss.str();
 }
@@ -227,6 +258,7 @@ std::optional<UdevRule> UdevManager::parseRuleFile(const std::string& filePath) 
     std::regex productRegex("ATTRS\\{idProduct\\}==\"([0-9a-fA-F]+)\"");
     std::regex serialRegex("ATTRS\\{serial\\}==\"([^\"]+)\"");
     std::regex symlinkRegex("SYMLINK\\+=\"([^\"]+)\"");
+    std::regex kernelRegex("KERNELS==\"([^\"]+)\"");
     
     while (std::getline(file, line)) {
         // Skip comments for rule parsing, but extract device name from comments
@@ -252,6 +284,10 @@ std::optional<UdevRule> UdevManager::parseRuleFile(const std::string& filePath) 
         
         if (std::regex_search(line, match, symlinkRegex)) {
             rule.symlink = match[1].str();
+        }
+        
+        if (std::regex_search(line, match, kernelRegex)) {
+            rule.kernelPath = match[1].str();
         }
     }
     

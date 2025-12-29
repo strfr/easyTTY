@@ -107,6 +107,16 @@ bool UdevManager::ruleExists(const DeviceInfo& device) const {
                       });
 }
 
+int UdevManager::getRuleMatchType(const DeviceInfo& device) const {
+    for (const auto& rule : rules_) {
+        if (rule.matchesDevice(device)) {
+            // 2 = unique match (has serial), 1 = shared match (no serial)
+            return rule.isUniqueMatch() ? 2 : 1;
+        }
+    }
+    return 0; // no match
+}
+
 bool UdevManager::symlinkExists(const std::string& symlinkName) const {
     return std::any_of(rules_.begin(), rules_.end(),
                       [&symlinkName](const UdevRule& rule) {

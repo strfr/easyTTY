@@ -53,6 +53,13 @@ public:
     bool ruleExists(const DeviceInfo& device) const;
     
     /**
+     * @brief Get rule match type for a device
+     * @param device Device to check
+     * @return 0 = no rule, 1 = shared rule (no serial), 2 = unique rule (has serial)
+     */
+    int getRuleMatchType(const DeviceInfo& device) const;
+    
+    /**
      * @brief Check if symlink name is already in use
      * @param symlinkName Symlink name to check
      * @return True if name is already used

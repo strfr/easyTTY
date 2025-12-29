@@ -71,14 +71,16 @@ struct UdevRule {
             return false;
         }
         // If rule has serial, device must match it
-        if (!serial.empty() && serial != device.serial) {
-            return false;
+        if (!serial.empty()) {
+            return serial == device.serial;
         }
-        // If device has serial but rule doesn't, they don't match
-        if (serial.empty() && !device.serial.empty()) {
-            return false;
-        }
-        return true;
+        // Rule has no serial - matches devices without serial
+        return device.serial.empty();
+    }
+    
+    // Check if this rule uniquely identifies the device (has serial)
+    bool isUniqueMatch() const {
+        return !serial.empty();
     }
 };
 

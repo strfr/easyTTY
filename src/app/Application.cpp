@@ -133,11 +133,13 @@ void Application::showDeviceList() {
             ));
         } else {
             for (const auto& device : devices) {
-                // Check if rule already exists for this device
-                bool hasRule = udevManager_->ruleExists(device);
+                // Check rule match type: 0=none, 1=shared (no serial), 2=unique
+                int matchType = udevManager_->getRuleMatchType(device);
                 std::string label = formatDeviceForList(device);
-                if (hasRule) {
+                if (matchType == 2) {
                     label += " [RULE EXISTS]";
+                } else if (matchType == 1) {
+                    label += " [SHARED RULE]";
                 }
                 
                 items.push_back(tui::MenuItem(
@@ -297,10 +299,10 @@ void Application::showDeviceDetails(const DeviceInfo& device) {
         
         items.push_back(tui::MenuItem::Separator());
         
-        // Refresh and check if rule exists
-        bool hasRule = udevManager_->ruleExists(device);
+        // Refresh and check rule match type
+        int matchType = udevManager_->getRuleMatchType(device);
         
-        if (hasRule) {
+        if (matchType == 2) {
             items.push_back(tui::MenuItem(
                 "Rule already exists for this device",
                 "",
@@ -308,7 +310,24 @@ void Application::showDeviceDetails(const DeviceInfo& device) {
                 nullptr,
                 false
             ));
+        } else if (matchType == 1) {
+            items.push_back(tui::MenuItem(
+                "SHARED RULE: Rule exists but device has no serial",
+                "All identical devices will get the same symlink",
+                MenuItemType::Action,
+                nullptr,
+                false
+            ));
         } else {
+            if (device.serial.empty()) {
+                items.push_back(tui::MenuItem(
+                    "WARNING: Device has no serial number",
+                    "Rule will apply to ALL identical devices",
+                    MenuItemType::Action,
+                    nullptr,
+                    false
+                ));
+            }
             items.push_back(tui::MenuItem(
                 "Create Persistent Name Rule",
                 "Create udev rule for this device",

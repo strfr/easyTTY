@@ -141,6 +141,8 @@ DeviceInfo DeviceDetector::extractDeviceInfo(struct udev_device* dev) {
         info.serial = getSysAttr(usb_dev, "serial");
         info.manufacturer = getSysAttr(usb_dev, "manufacturer");
         info.product = getSysAttr(usb_dev, "product");
+        info.busNum = getSysAttr(usb_dev, "busnum");
+        info.devNum = getSysAttr(usb_dev, "devnum");
         
         const char* driver = udev_device_get_driver(usb_dev);
         if (driver) {
@@ -148,7 +150,7 @@ DeviceInfo DeviceDetector::extractDeviceInfo(struct udev_device* dev) {
         }
     }
     
-    // Get interface driver
+    // Get interface driver and interface number
     struct udev_device* intf_dev = udev_device_get_parent_with_subsystem_devtype(
         dev, "usb", "usb_interface");
     if (intf_dev) {
@@ -156,6 +158,7 @@ DeviceInfo DeviceDetector::extractDeviceInfo(struct udev_device* dev) {
         if (driver) {
             info.driver = driver;
         }
+        info.interfaceNum = getSysAttr(intf_dev, "bInterfaceNumber");
     }
     
     return info;

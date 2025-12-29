@@ -34,11 +34,14 @@ int Application::run() {
 
 void Application::showMainMenu() {
     while (running_) {
+        // Refresh data before showing menu
+        refreshAll();
+        
         tui::Menu menu("USB Device Manager", "Manage persistent USB device names with udev rules");
         
         std::vector<tui::MenuItem> items;
         
-        // Device count info
+        // Device count info (freshly scanned)
         size_t deviceCount = deviceDetector_->getDevices().size();
         size_t ruleCount = udevManager_->getExistingRules().size();
         
@@ -57,15 +60,6 @@ void Application::showMainMenu() {
         ));
         
         items.push_back(tui::MenuItem::Separator());
-        
-        items.push_back(tui::MenuItem(
-            "Refresh Devices",
-            "Rescan for connected devices",
-            MenuItemType::Action,
-            [this]() { 
-                refreshAll(); 
-            }
-        ));
         
         items.push_back(tui::MenuItem(
             "Reload & Apply udev Rules",
@@ -118,11 +112,10 @@ void Application::showMainMenu() {
 }
 
 void Application::showDeviceList() {
-    bool stayInMenu = true;
-    
-    while (stayInMenu) {
-        // Refresh devices
+    while (true) {
+        // Refresh devices and rules before showing menu
         deviceDetector_->scanDevices();
+        udevManager_->refresh();
         
         tui::Menu menu("Connected USB Serial Devices", "Select a device to create a persistent name");
         
@@ -158,29 +151,42 @@ void Application::showDeviceList() {
         
         items.push_back(tui::MenuItem::Separator());
         
+        // Use Back type for Refresh so it exits menu loop and rebuilds
         items.push_back(tui::MenuItem(
             "Refresh",
             "Rescan for devices",
-            MenuItemType::Action,
-            [this]() { deviceDetector_->scanDevices(); }
+            MenuItemType::Back
         ));
         
-        items.push_back(tui::MenuItem::Back());
+        items.push_back(tui::MenuItem(
+            "< Back to Main Menu",
+            "Return to main menu",
+            MenuItemType::Back
+        ));
         
         menu.setItems(items);
-        menu.setHelp("↑/↓: Navigate  Enter: Select device  R: Refresh  ESC: Back");
+        menu.setHelp("↑/↓: Navigate  Enter: Select device  ESC: Back");
         
         int result = menu.run();
+        
+        // Check which item was selected
         if (result == -1) {
-            stayInMenu = false;
+            // ESC or Q pressed
+            return;
         }
+        
+        // Check if "< Back to Main Menu" was selected (last item)
+        if (result >= 0 && static_cast<size_t>(result) == items.size() - 1) {
+            return;
+        }
+        
+        // Otherwise it was Refresh or came back from device details, loop continues
     }
 }
 
 void Application::showExistingRules() {
-    bool stayInMenu = true;
-    
-    while (stayInMenu) {
+    while (true) {
+        // Refresh rules before showing menu
         udevManager_->refresh();
         
         tui::Menu menu("Existing udev Rules", "Manage EasyTTY created udev rules");
@@ -219,25 +225,43 @@ void Application::showExistingRules() {
         
         items.push_back(tui::MenuItem::Separator());
         
+        // Use Back type for Refresh so it exits menu loop and rebuilds
         items.push_back(tui::MenuItem(
             "Refresh",
             "Reload rules from disk",
-            MenuItemType::Action,
-            [this]() { udevManager_->refresh(); }
+            MenuItemType::Back
         ));
         
-        items.push_back(tui::MenuItem::Back());
+        items.push_back(tui::MenuItem(
+            "< Back to Main Menu",
+            "Return to main menu",
+            MenuItemType::Back
+        ));
         
         menu.setItems(items);
+        menu.setHelp("↑/↓: Navigate  Enter: Select rule  ESC: Back");
         
         int result = menu.run();
+        
+        // Check which item was selected
         if (result == -1) {
-            stayInMenu = false;
+            // ESC or Q pressed
+            return;
         }
+        
+        // Check if "< Back to Main Menu" was selected (last item)
+        if (result >= 0 && static_cast<size_t>(result) == items.size() - 1) {
+            return;
+        }
+        
+        // Otherwise it was Refresh or came back from rule details, loop continues
     }
 }
 
 void Application::showDeviceDetails(const DeviceInfo& device) {
+    // Refresh rules to get latest status
+    udevManager_->refresh();
+    
     bool stayInMenu = true;
     
     while (stayInMenu) {
@@ -250,22 +274,30 @@ void Application::showDeviceDetails(const DeviceInfo& device) {
         
         // Device info display
         items.push_back(tui::MenuItem("Device Path: " + device.devPath, "", MenuItemType::Action, nullptr, false));
-        items.push_back(tui::MenuItem("System Path: " + device.sysPath, "", MenuItemType::Action, nullptr, false));
         items.push_back(tui::MenuItem::Separator());
-        items.push_back(tui::MenuItem("Vendor ID:   " + device.vendorId, "", MenuItemType::Action, nullptr, false));
-        items.push_back(tui::MenuItem("Product ID:  " + device.productId, "", MenuItemType::Action, nullptr, false));
-        items.push_back(tui::MenuItem("Manufacturer: " + device.manufacturer, "", MenuItemType::Action, nullptr, false));
-        items.push_back(tui::MenuItem("Product:     " + device.product, "", MenuItemType::Action, nullptr, false));
+        items.push_back(tui::MenuItem("Vendor ID:    " + device.vendorId, "", MenuItemType::Action, nullptr, false));
+        items.push_back(tui::MenuItem("Product ID:   " + device.productId, "", MenuItemType::Action, nullptr, false));
+        if (!device.manufacturer.empty()) {
+            items.push_back(tui::MenuItem("Manufacturer: " + device.manufacturer, "", MenuItemType::Action, nullptr, false));
+        }
+        if (!device.product.empty()) {
+            items.push_back(tui::MenuItem("Product:      " + device.product, "", MenuItemType::Action, nullptr, false));
+        }
         if (!device.serial.empty()) {
-            items.push_back(tui::MenuItem("Serial:      " + device.serial, "", MenuItemType::Action, nullptr, false));
+            items.push_back(tui::MenuItem("Serial:       " + device.serial, "", MenuItemType::Action, nullptr, false));
+        } else {
+            items.push_back(tui::MenuItem("Serial:       (none - device has no serial)", "", MenuItemType::Action, nullptr, false));
         }
         if (!device.driver.empty()) {
-            items.push_back(tui::MenuItem("Driver:      " + device.driver, "", MenuItemType::Action, nullptr, false));
+            items.push_back(tui::MenuItem("Driver:       " + device.driver, "", MenuItemType::Action, nullptr, false));
+        }
+        if (!device.busNum.empty() && !device.devNum.empty()) {
+            items.push_back(tui::MenuItem("USB Location: Bus " + device.busNum + " Dev " + device.devNum, "", MenuItemType::Action, nullptr, false));
         }
         
         items.push_back(tui::MenuItem::Separator());
         
-        // Check if rule exists
+        // Refresh and check if rule exists
         bool hasRule = udevManager_->ruleExists(device);
         
         if (hasRule) {
@@ -476,7 +508,19 @@ std::string Application::formatDeviceForList(const DeviceInfo& device) const {
         ss << " - " << device.manufacturer;
     }
     
-    ss << " [" << device.vendorId << ":" << device.productId << "]";
+    ss << " [" << device.vendorId << ":" << device.productId;
+    
+    // Add serial if available (helps distinguish identical devices)
+    if (!device.serial.empty()) {
+        // Truncate long serials for display
+        std::string shortSerial = device.serial;
+        if (shortSerial.length() > 8) {
+            shortSerial = shortSerial.substr(0, 8) + "..";
+        }
+        ss << " S:" << shortSerial;
+    }
+    
+    ss << "]";
     
     return ss.str();
 }
@@ -484,7 +528,17 @@ std::string Application::formatDeviceForList(const DeviceInfo& device) const {
 std::string Application::formatRuleForList(const UdevRule& rule) const {
     std::stringstream ss;
     ss << rule.symlink;
-    ss << " [" << rule.vendorId << ":" << rule.productId << "]";
+    ss << " [" << rule.vendorId << ":" << rule.productId;
+    
+    if (!rule.serial.empty()) {
+        std::string shortSerial = rule.serial;
+        if (shortSerial.length() > 8) {
+            shortSerial = shortSerial.substr(0, 8) + "..";
+        }
+        ss << " S:" << shortSerial;
+    }
+    
+    ss << "]";
     
     return ss.str();
 }

@@ -23,6 +23,9 @@ struct DeviceInfo {
     std::string product;        // Product string
     std::string driver;         // Kernel driver
     std::string devNode;        // Device node name (ttyUSB0)
+    std::string busNum;         // USB bus number
+    std::string devNum;         // USB device number on bus
+    std::string interfaceNum;   // USB interface number
     
     bool isValid() const {
         return !devPath.empty() && !vendorId.empty();
@@ -33,6 +36,15 @@ struct DeviceInfo {
             return product + " (" + devNode + ")";
         }
         return devNode;
+    }
+    
+    // Unique identifier for this specific device instance
+    std::string getUniqueId() const {
+        if (!serial.empty()) {
+            return vendorId + ":" + productId + ":" + serial;
+        }
+        // Use bus/dev path for devices without serial
+        return vendorId + ":" + productId + ":bus" + busNum + "dev" + devNum;
     }
 };
 
@@ -46,11 +58,28 @@ struct UdevRule {
     std::string serial;
     std::string symlink;        // Resulting symlink in /dev/
     std::string filePath;       // Path to the rule file
+    std::string interfaceNum;   // USB interface number (for multi-interface devices)
     int priority;               // Rule priority (e.g., 99)
     bool isActive;              // Whether rule is currently active
     
     std::string generateRule() const;
     std::string getFileName() const;
+    
+    // Check if this rule matches a device
+    bool matchesDevice(const DeviceInfo& device) const {
+        if (vendorId != device.vendorId || productId != device.productId) {
+            return false;
+        }
+        // If rule has serial, device must match it
+        if (!serial.empty() && serial != device.serial) {
+            return false;
+        }
+        // If device has serial but rule doesn't, they don't match
+        if (serial.empty() && !device.serial.empty()) {
+            return false;
+        }
+        return true;
+    }
 };
 
 /**

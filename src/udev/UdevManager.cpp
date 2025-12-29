@@ -54,11 +54,9 @@ OperationResult UdevManager::createRule(const DeviceInfo& device, const std::str
         return OperationResult::Failure("Symlink name '" + symlinkName + "' is already in use");
     }
     
-    // Check if rule for this device already exists
+    // Check if rule for this exact device already exists
     for (const auto& rule : rules_) {
-        if (rule.vendorId == device.vendorId && 
-            rule.productId == device.productId &&
-            (device.serial.empty() || rule.serial == device.serial)) {
+        if (rule.matchesDevice(device)) {
             return OperationResult::Failure("A rule for this device already exists as '" + rule.symlink + "'");
         }
     }
@@ -105,9 +103,7 @@ OperationResult UdevManager::deleteRuleFile(const std::string& filePath) {
 bool UdevManager::ruleExists(const DeviceInfo& device) const {
     return std::any_of(rules_.begin(), rules_.end(),
                       [&device](const UdevRule& rule) {
-                          return rule.vendorId == device.vendorId &&
-                                 rule.productId == device.productId &&
-                                 (device.serial.empty() || rule.serial == device.serial);
+                          return rule.matchesDevice(device);
                       });
 }
 

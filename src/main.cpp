@@ -47,9 +47,14 @@ void listDevices() {
             }
             if (!dev.serial.empty()) {
                 std::cout << "  Serial:       " << dev.serial << "\n";
+            } else {
+                std::cout << "  Serial:       (none)\n";
             }
             if (!dev.driver.empty()) {
                 std::cout << "  Driver:       " << dev.driver << "\n";
+            }
+            if (!dev.busNum.empty() && !dev.devNum.empty()) {
+                std::cout << "  USB Location: Bus " << dev.busNum << " Dev " << dev.devNum << "\n";
             }
             std::cout << "\n";
         }

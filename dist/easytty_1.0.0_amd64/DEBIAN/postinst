@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+echo "EasyTTY installed successfully!"
+echo "Run 'easytty' or 'sudo easytty' to start."
+exit 0

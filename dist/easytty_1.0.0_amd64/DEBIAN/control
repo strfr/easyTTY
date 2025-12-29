@@ -1,0 +1,17 @@
+Package: easytty
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libc6 (>= 2.17), libncurses6 | libncurses5, libudev1
+Maintainer: Your Name <your.email@example.com>
+Description: USB Device Naming Utility - KConfig-style TUI for managing persistent USB serial device names
+ EasyTTY is a terminal-based utility for creating persistent USB
+ device names using udev rules. It provides a menuconfig-style
+ interface for easy navigation and configuration.
+ .
+ Features:
+  - Auto-detect USB serial devices (ttyUSB, ttyACM, etc.)
+  - Extract USB device attributes (vendor ID, product ID, serial)
+  - Create/delete udev rules for persistent device naming
+  - Automatic rule application

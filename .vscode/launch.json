@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug EasyTTY",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/easyTTY",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "name": "Debug EasyTTY (sudo)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/sudo",
+            "args": ["${workspaceFolder}/build/easyTTY"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "preLaunchTask": "Build",
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}

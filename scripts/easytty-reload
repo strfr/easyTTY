@@ -1,0 +1,13 @@
+#!/bin/bash
+# EasyTTY udev reload helper script
+# Reloads udev rules and triggers device re-enumeration
+
+set -e
+
+echo "Reloading udev rules..."
+udevadm control --reload-rules
+
+echo "Triggering device re-enumeration..."
+udevadm trigger
+
+echo "Done! udev rules have been reloaded."

@@ -5,7 +5,7 @@ A KConfig-style TUI application for creating persistent USB serial device names 
 ## Quick Install
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/strfr/easyTTY/main/install.sh)
+curl -sL https://raw.githubusercontent.com/strfr/easyTTY/main/install.sh | sudo bash
 ```
 
 ## Features

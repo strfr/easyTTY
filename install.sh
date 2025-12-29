@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 VERSION="1.0.0"
 INSTALL_DIR="/usr/local/bin"
 BUILD_DIR="/tmp/easytty-build-$$"
-REPO_URL="https://github.com/USER/easyTTY.git"
+REPO_URL="https://github.com/strfr/easyTTY.git"
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════╗"

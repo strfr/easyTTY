@@ -263,7 +263,7 @@ std::string Screen::showInputDialog(const std::string& title, const std::string&
         50
     });
     dialogWidth = std::min(dialogWidth, width_ - 4);
-    int dialogHeight = 7;
+    int dialogHeight = 8;
     
     int startY = (height_ - dialogHeight) / 2;
     int startX = (width_ - dialogWidth) / 2;
@@ -285,45 +285,62 @@ std::string Screen::showInputDialog(const std::string& title, const std::string&
     // Draw prompt
     drawText(startY + 2, startX + 3, prompt, ColorScheme::NORMAL);
     
+    // Draw help text
+    drawText(startY + 6, startX + 3, "Enter: Confirm | ESC: Cancel", ColorScheme::BORDER);
+    
     // Draw input field
     int inputWidth = dialogWidth - 8;
     int inputY = startY + 4;
     int inputX = startX + 3;
     
-    attron(COLOR_PAIR(ColorScheme::STATUS));
-    for (int i = 0; i < inputWidth; i++) {
-        mvaddch(inputY, inputX + i, ' ');
-    }
-    if (!defaultValue.empty()) {
-        mvprintw(inputY, inputX, "%s", defaultValue.c_str());
-    }
-    attroff(COLOR_PAIR(ColorScheme::STATUS));
+    std::string input = defaultValue;
+    size_t cursorPos = input.length();
     
-    refresh();
-    
-    // Get input
-    echo();
     curs_set(1);
     
-    char buffer[256] = {0};
-    if (!defaultValue.empty()) {
-        strncpy(buffer, defaultValue.c_str(), 255);
+    while (true) {
+        // Draw input field
+        attron(COLOR_PAIR(ColorScheme::STATUS));
+        for (int i = 0; i < inputWidth; i++) {
+            mvaddch(inputY, inputX + i, ' ');
+        }
+        mvprintw(inputY, inputX, "%s", input.c_str());
+        attroff(COLOR_PAIR(ColorScheme::STATUS));
+        
+        move(inputY, inputX + static_cast<int>(cursorPos));
+        refresh();
+        
+        int ch = getch();
+        
+        if (ch == 27) { // ESC - Cancel
+            curs_set(0);
+            return "";  // Empty string means cancelled
+        } else if (ch == '\n' || ch == '\r' || ch == KEY_ENTER) { // Enter - Confirm
+            curs_set(0);
+            return input;
+        } else if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) { // Backspace
+            if (cursorPos > 0) {
+                input.erase(cursorPos - 1, 1);
+                cursorPos--;
+            }
+        } else if (ch == KEY_DC) { // Delete
+            if (cursorPos < input.length()) {
+                input.erase(cursorPos, 1);
+            }
+        } else if (ch == KEY_LEFT) {
+            if (cursorPos > 0) cursorPos--;
+        } else if (ch == KEY_RIGHT) {
+            if (cursorPos < input.length()) cursorPos++;
+        } else if (ch == KEY_HOME) {
+            cursorPos = 0;
+        } else if (ch == KEY_END) {
+            cursorPos = input.length();
+        } else if (ch >= 32 && ch < 127 && input.length() < static_cast<size_t>(inputWidth - 1)) {
+            // Printable character
+            input.insert(cursorPos, 1, static_cast<char>(ch));
+            cursorPos++;
+        }
     }
-    
-    move(inputY, inputX);
-    
-    // Clear and get new input
-    for (int i = 0; i < inputWidth; i++) {
-        mvaddch(inputY, inputX + i, ' ');
-    }
-    move(inputY, inputX);
-    
-    getnstr(buffer, std::min(inputWidth - 1, 255));
-    
-    noecho();
-    curs_set(0);
-    
-    return std::string(buffer);
 }
 
 } // namespace tui

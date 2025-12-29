@@ -13,9 +13,26 @@ curl -sL https://raw.githubusercontent.com/strfr/easyTTY/main/install.sh | sudo 
 - 🔍 **Auto-detect USB Serial Devices** - Automatically discovers ttyUSB, ttyACM, and other USB serial devices
 - 📝 **Extract Device Attributes** - Retrieves vendor ID, product ID, serial number, and other USB attributes
 - ✨ **Create Persistent Names** - Generate udev rules to create symlinks like `/dev/RS485_1` instead of `/dev/ttyUSB0`
+- � **USB Port Identification** - Devices without serial numbers (CH340/CH341) are identified by USB port path
 - 🗂️ **Manage Existing Rules** - View, verify, and delete existing EasyTTY-created rules
 - 🔄 **Auto-apply Rules** - Automatically reloads udev rules after changes
 - 🖥️ **KConfig-style TUI** - Familiar menuconfig-like interface with keyboard navigation
+
+## ⚠️ Important: Devices Without Serial Numbers
+
+Some USB-to-serial adapters like **CH340/CH341** do not have unique serial numbers. For these devices, EasyTTY uses the **USB port path** (e.g., `1-8`, `1-6.3`) to identify them.
+
+**This means:**
+- ✅ Each USB port can have its own persistent device name
+- ✅ Multiple identical adapters can be distinguished
+- ⚠️ **Devices must stay plugged into the SAME USB port** for the rule to work
+- ⚠️ If you move a device to a different port, the symlink won't appear
+
+**Example:**
+| Device | USB Port | Symlink |
+|--------|----------|---------|
+| CH341 #1 | Port 1-8 | `/dev/cnc_controller` |
+| CH341 #2 | Port 1-6.3 | `/dev/laser_cutter` |
 
 ## Screenshots
 

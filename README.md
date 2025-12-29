@@ -2,6 +2,12 @@
 
 A KConfig-style TUI application for creating persistent USB serial device names using udev rules on Linux.
 
+## Quick Install
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/strfr/easyTTY/main/install.sh)
+```
+
 ## Features
 
 - 🔍 **Auto-detect USB Serial Devices** - Automatically discovers ttyUSB, ttyACM, and other USB serial devices

@@ -1,7 +1,0 @@
-#!/bin/bash
-set -e
-if [ "$1" = "purge" ]; then
-    echo "Note: udev rules in /etc/udev/rules.d/99-easytty-*.rules were preserved."
-    echo "Remove them manually if desired."
-fi
-exit 0

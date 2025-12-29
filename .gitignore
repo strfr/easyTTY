@@ -2,9 +2,12 @@
 build/
 cmake-build-*/
 out/
+dist/
+release/
 
 # IDE files
 .idea/
+.cache/
 *.swp
 *.swo
 *~
